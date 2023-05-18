@@ -1,4 +1,6 @@
-import React from "react"
+import React, { useCallback, useRef } from "react"
+import { toPng } from 'html-to-image';
+import heart from "/images/heart.svg";
 
 export default function Meme() {
     const [meme, setMeme] = React.useState({
@@ -9,17 +11,12 @@ export default function Meme() {
     const [allMemes, setAllMemes] = React.useState([])
     
 
-    
     React.useEffect(() => {
         fetch("https://api.imgflip.com/get_memes")
             .then(res => res.json())
             .then(data => setAllMemes(data.data.memes))
     }, [])
-    
-    
-    
-    
-    
+        
     function getMemeImage() {
         const randomNumber = Math.floor(Math.random() * allMemes.length)
         const url = allMemes[randomNumber].url
@@ -37,7 +34,26 @@ export default function Meme() {
             [name]: value
         }))
     }
-    
+
+    const ref = useRef(null)
+
+    const onButtonClick = useCallback(() => {
+      if (ref.current === null) {
+        return
+      }
+  
+      toPng(ref.current, { cacheBust: true, })
+        .then((dataUrl) => {
+          const link = document.createElement('a')
+          link.download = 'meme.png';
+          link.href = dataUrl;
+          link.click();
+        })
+        .catch((err) => {
+          console.log(err)
+        })
+    }, [ref])
+
     return (
         <main>
             <div className="form">
@@ -57,17 +73,18 @@ export default function Meme() {
                     value={meme.bottomText}
                     onChange={handleChange}
                 />
-                <button 
-                    className="form--button"
-                    onClick={getMemeImage}
-                >
-                    Get a new meme image 🖼
-                </button>
+                <button className="form--button" onClick={getMemeImage}>Get a new meme image 🖼</button>
             </div>
-            <div className="meme">
-                <img src={meme.randomImage} className="meme--image" />
+            <div className="meme" ref={ref}>
+                <img src={meme.randomImage} className="meme--image"/>
                 <h2 className="meme--text top">{meme.topText}</h2>
                 <h2 className="meme--text bottom">{meme.bottomText}</h2>
+            </div>
+            <div className="download">
+                <button className="download--button" onClick={onButtonClick}>Download Meme</button>
+                <p className="portfolio">made with <img className="heart" src={heart}></img> by 
+                    <a className="portfolio-link" href="https://eneda.dev">eneda</a>
+                </p>
             </div>
         </main>
     )
